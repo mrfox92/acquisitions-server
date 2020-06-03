@@ -13,7 +13,7 @@ class CreateTableMaterialInvoice extends Migration
      */
     public function up()
     {
-        Schema::create('table_material_invoice', function (Blueprint $table) {
+        Schema::create('material_invoices', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('material_id');
             $table->foreign('material_id')->references('id')->on('materials');
@@ -34,6 +34,6 @@ class CreateTableMaterialInvoice extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('table_material_invoice');
+        Schema::dropIfExists('material_invoices');
     }
 }

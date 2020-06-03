@@ -15,6 +15,7 @@ class CreateOfficesTable extends Migration
     {
         Schema::create('offices', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('name');
             $table->unsignedInteger('department_id');
             $table->foreign('department_id')->references('id')->on('departments');
             $table->timestamps();

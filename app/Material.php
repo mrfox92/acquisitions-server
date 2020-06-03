@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Material extends Model
 {
     use SoftDeletes;
+
+    protected $fillable = ['acquisition_id', 'name', 'slug', 'unity_type', 'stock', 'picture'];
     
     const UNITY = 1;
     const PACKAGE = 2;

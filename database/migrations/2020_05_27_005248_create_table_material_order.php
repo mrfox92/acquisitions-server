@@ -13,7 +13,7 @@ class CreateTableMaterialOrder extends Migration
      */
     public function up()
     {
-        Schema::create('table_material_order', function (Blueprint $table) {
+        Schema::create('material_orders', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('material_id');
             $table->foreign('material_id')->references('id')->on('materials');
@@ -31,6 +31,6 @@ class CreateTableMaterialOrder extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('table_material_order');
+        Schema::dropIfExists('material_orders');
     }
 }

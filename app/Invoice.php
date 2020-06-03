@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
+    protected $fillable = ['invoice_number', 'provider_id', 'emission_date', 'expiration_date'];
+    
     public function acquisition () {
         return $this->belongsTo(Acquisition::class);
     }

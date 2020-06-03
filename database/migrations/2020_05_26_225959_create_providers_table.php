@@ -18,8 +18,8 @@ class CreateProvidersTable extends Migration
             $table->string('rut');
             $table->string('name');
             $table->string('address')->nullable();
-            $table->string('url_wab')->nullable();
-            $table->bigInteger('phone')->nullable();
+            $table->string('url_web')->nullable();
+            $table->string('phone')->nullable();
             $table->string('email')->unique();
             $table->timestamps();
         });

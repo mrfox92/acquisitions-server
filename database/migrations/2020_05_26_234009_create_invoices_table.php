@@ -18,6 +18,8 @@ class CreateInvoicesTable extends Migration
             $table->bigInteger('invoice_number');
             $table->unsignedBigInteger('provider_id');
             $table->foreign('provider_id')->references('id')->on('providers');
+            $table->unsignedInteger('acquisition_id');
+            $table->foreign('acquisition_id')->references('id')->on('acquisitions');
             $table->timestamp('emission_date')->nullable();
             $table->timestamp('expiration_date')->nullable();
             $table->timestamps();
