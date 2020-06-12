@@ -15,6 +15,7 @@ class CreateMaterialsTable extends Migration
     {
         Schema::create('materials', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->string('bar_code')->unique();
             $table->unsignedInteger('acquisition_id');
             $table->foreign('acquisition_id')->references('id')->on('acquisitions');
             $table->string('name');
@@ -26,7 +27,7 @@ class CreateMaterialsTable extends Migration
                 \App\Material::SET,
                 \App\Material::BOX
             ]);
-            $table->bigInteger('stock');
+            $table->bigInteger('stock')->default(0);
             $table->string('picture')->nullable();
             $table->timestamps();
             $table->softDeletes();

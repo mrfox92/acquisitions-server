@@ -9,8 +9,9 @@ class Material extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['acquisition_id', 'name', 'slug', 'unity_type', 'stock', 'picture'];
-    
+    protected $fillable = ['bar_code', 'acquisition_id', 'name', 'slug', 'unity_type', 'stock', 'picture'];
+
+    //  tipos de unidades de materiales
     const UNITY = 1;
     const PACKAGE = 2;
     const REAM = 3;

@@ -17,6 +17,7 @@ $factory->define(Material::class, function (Faker $faker) {
     ]);
 
     return [
+        'bar_code'          =>  $faker->isbn13,
         'acquisition_id'    =>  \App\Acquisition::all()->random()->id,
         'name'              =>  $name,
         'slug'              =>  Str::slug($name, '-'),

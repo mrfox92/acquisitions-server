@@ -14,10 +14,10 @@ class MaterialInvoice extends Model
     }
     //  material invoice relaciona los materiales con las facturas a las que pertenecen
     public function invoice () {
-        return $this->belongsTo(Invoice::class);
+        return $this->belongsTo(Invoice::class)->select('id', 'invoice_number', 'provider_id', 'acquisition_id', 'emission_date', 'expiration_date', 'created_at');
     }
 
     public function material () {
-        return $this->belongsTo(Material::class);
+        return $this->belongsTo(Material::class)->select('id', 'bar_code', 'acquisition_id', 'name', 'slug', 'unity_type', 'stock', 'picture', 'created_at');
     }
 }

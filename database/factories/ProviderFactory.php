@@ -7,11 +7,11 @@ use Faker\Generator as Faker;
 
 $factory->define(Provider::class, function (Faker $faker) {
     return [
-        'rut'       =>  $faker->unique()->randomDigit,
+        'rut'       =>  $faker->uuid,   //  identificador unico
         'name'      =>  $faker->name,
-        'address'   =>  $faker->address,
+        'address'   =>  $faker->streetAddress,
         'url_web'   =>  $faker->url,
-        'phone'     =>  $faker->phoneNumber,    //  el campo debe ser string
+        'phone'     =>  $faker->e164PhoneNumber,    //  el campo debe ser string
         'email'     =>  $faker->unique()->safeEmail,
     ];
 });
