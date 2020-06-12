@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Helpers\UploadImage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule; //  reglas de validacion utilizar unique de una forma mas controlada
 use App\Material;
@@ -14,9 +15,9 @@ class MaterialController extends Controller
     //  aplicamos el middleware de autenticacion y creamos excepcion para las rutas index y show
     public function __construct () {
         //  middleware auth
-        $this->middleware('api.auth')->except(['index', 'show']);
+        $this->middleware('api.auth')->except(['index', 'show', 'getImage']);
         //  middleware role
-        $this->middleware(sprintf('role:%s', \App\Role::ACQUISITION))->except(['index', 'show']);
+        $this->middleware(sprintf('role:%s', \App\Role::ACQUISITION))->except(['index', 'show', 'getImage']);
     }
 
     public function index () {
@@ -220,6 +221,63 @@ class MaterialController extends Controller
         }
 
         return response()->json($data, $data['code']);
+    }
+
+    public function upload ( Request $request ) {
+
+        $messages = [
+            'file0.required'    =>  'La imagen es requerida',
+            'file0.image'       =>  'El archivo a subir debe ser una imagen',
+            'file0.mimes'       =>  'El formato debe ser una imagen valida'
+        ];
+
+        //  validamos los datos que vienen desde el formulario
+        $validate = Validator::make($request->all(),[
+            'file0' =>  'required|image|mimes:jpg,png,jpeg,gif'
+        ], $messages);
+
+        if ( !$request->file('file0') || $validate->fails() ) {
+            //  mensaje de error
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  400, 
+                'message'   =>  'Error al subir imagen',
+                'errors'    =>  $validate->errors()
+            );
+            
+        } else {
+            //  recoger datos de la peticion
+            //  llamamos a nuestro helper para guardar la imagen y retornar el nombre para guardar en base de datos
+            $picture = UploadImage::uploadFile('file0', 'materials');
+            //  devolver el resultado
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'message'   =>  'La imagen ha sido agregada exitosamente',
+                'picture'    =>  $picture
+            );
+
+        }
+
+        return response()->json($data, $data['code']);
+    }
+
+    public function getImage ( $imageName ) {
+        //  reconstruimos la ruta a la imagen
+        $file = sprintf('storage/materials/%s', $imageName);
+        //  verificamos si existe la imagen
+        if ( \File::exists($file) ) {
+            //  retornamos la imagen
+            return \Image::make($file)->response();
+        } else {
+            
+            return response()->json([
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'Archivo no entontrado'
+            ], 404);
+        }
+
     }
 
     public function destroy( $id ) {

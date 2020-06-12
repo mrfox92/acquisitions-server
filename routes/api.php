@@ -39,6 +39,9 @@ Route::delete('/user/delete/{id}', 'UserController@destroy');
 
 //  rutas Materiales
 Route::Resource('/materials', 'MaterialController');
+//  ruta para acceder a nuestras imagenes de materiales
+Route::post('/materials/upload', 'MaterialController@upload');
+Route::get('/materials/image/{imageName}', 'MaterialController@getImage');
 
 //  rutas Proveedores
 Route::Resource('/provider', 'ProviderController');
