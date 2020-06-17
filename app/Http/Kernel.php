@@ -64,5 +64,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role'  =>  \App\Http\Middleware\RoleMiddleware::class,  //  registramos nuestro middleware comprobar privilegios
         'api.auth'   =>  \App\Http\Middleware\ApiAuthMiddleware::class,   //  registramos nuestro middleware personalizado
+        'cors'   =>  \App\Http\Middleware\CorsMiddleware::class,   //  registramos el nuevo middleware
     ];
 }

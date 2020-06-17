@@ -29,6 +29,7 @@ class JwtAuth {
                 //  password incorrecta
                 $data = array(
                     'status'    =>  'error',
+                    'code'      =>  400,
                     'message'   =>  'Login - password incorrecto'
                 );
 
@@ -62,9 +63,11 @@ class JwtAuth {
     
                     //  devolvemos los datos decodificados
                     $data = array(
+                        'id'        =>  $decoded->sub,
                         'status'    =>  'success',
                         'message'   =>  'Login correcto',
-                        'user'   =>  $decoded
+                        'user'      =>  $decoded,
+                        'token'     =>  $jwt
                     );
 
                 } else {
@@ -82,6 +85,7 @@ class JwtAuth {
         } else {
             $data = array(
                 'status'    =>  'error',
+                'code'      =>  400,
                 'message'   =>  'Login - email incorrecto'
             );
         }

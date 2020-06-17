@@ -11,6 +11,7 @@ use App\User;
 class UserController extends Controller
 {
     public function __construct () {
+        $this->middleware('cors')->except(['pruebas']);
         $this->middleware('api.auth')->only(['destroy']);
         $this->middleware( sprintf('role:%s', \App\Role::ADMIN) )->only(['destroy']);
         //  asignamos al middleware que unicamente puedan eliminar usuarios aquel usuario con
@@ -19,6 +20,36 @@ class UserController extends Controller
 
     public function pruebas ( Request $request ) {
         return ('Esto es una prueba de USER-CONTROLLER');
+    }
+
+    public function checkToken ( Request $request ) {
+        //  obtenemos el token
+        $token = $request->header('Authorization');
+        // var_dump( $token ); die();
+        //  creamos una nueva instancia de nuestro jwtauth
+        $jwtAuth =  new \JwtAuth();
+        //  verificamos el token
+        $verificaToken = $jwtAuth->checkToken( $token );
+
+        //  enviamos la respuesta al usuario
+        if ( $verificaToken ) {
+
+            $data = array(
+                'status'        =>  'success',
+                'code'          =>  200,
+                'tokenValid'    =>  $verificaToken
+            );
+
+        } else {
+
+            $data = array(
+                'status'        =>  'error',
+                'code'          =>  401,
+                'tokenValid'    =>  $verificaToken
+            );
+        }
+
+        return response()->json($data, $data['code']);
     }
 
     public function register ( Request $request ) {
@@ -37,13 +68,23 @@ class UserController extends Controller
             //  limpiar datos con la funcion trim para limpiar de espacios al inicio y al final de una cadena
             $params_array = array_map('trim', $params_array);
 
+            //  mensajes personalizados register
+            $messages = [
+                'name.required'         =>  'El nombre usuario es requerido',
+                'last_name.required'    =>  'El apelliod usuario es requerido',
+                'email.required'        =>  'El correo electrónico es requerido',
+                'email.email'           =>  'El formato del correo debe ser un formato válido',
+                'email.unique'          =>  'El correo que ha ingresado ya está en uso en el sistema',
+                'password.required'     =>  'La contraseña es requerida'
+            ];
+
             //  validar los datos del formulario
             $validate = Validator::make($params_array, [
-                'name'      =>  'required|alpha',
-                'last_name'   =>  'required|alpha',
+                'name'      =>  'required',
+                'last_name'   =>  'required',
                 'email'     =>  'required|email|unique:users', //  comprobar si el usuario ya existe (duplicado)
                 'password'  =>  'required'
-            ]);
+            ], $messages);
 
             if ( $validate->fails() ) {
 
@@ -97,9 +138,9 @@ class UserController extends Controller
         }
 
 
-        return response()->json($data, $data['code']);  
+        return response()->json($data, $data['code']);
 
-        
+
     }
 
     public function login ( Request $request ) {
@@ -135,21 +176,21 @@ class UserController extends Controller
                     'message'   =>  'El usuario no se ha podido identificar',
                     'errors'    =>  $validate->errors()
                 );
-                
+
             } else {
-    
+
                 //  devolver token o datos
                 $signup = $jwtAuth->signup($params->email, $params->password);
-    
+
                 //  comprobamos si viene el getToken
                 if ( !empty( $params->getToken ) ) {
-    
+
                     $signup = $jwtAuth->signup($params->email, $params->password, true);
-    
+
                 }
             }
         } else {
-            
+
             $signup = array(
                 'status'    =>  'error',
                 'code'      =>  400,
@@ -175,7 +216,7 @@ class UserController extends Controller
 
         //  comprobamos si existe checktoken
         if ( $checkToken && !empty( $params_array ) ) {
-            
+
             //  capturamos la data del usuario registrado
             $user = $jwtAuth->checkToken($token, true);
             // var_dump($user); die();
@@ -248,11 +289,11 @@ class UserController extends Controller
             //  mensaje de error
             $data = array(
                 'status'    =>  'error',
-                'code'      =>  400, 
+                'code'      =>  400,
                 'message'   =>  'Error al subir imagen',
                 'errors'    =>  $validate->errors()
             );
-            
+
         } else {
             //  recoger datos de la peticion
             //  llamamos a nuestro helper para guardar la imagen y retornar el nombre para guardar en base de datos
