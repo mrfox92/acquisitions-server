@@ -27,6 +27,7 @@ class CreateOrdersTable extends Migration
             ]);
             $table->string('name_responsible');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

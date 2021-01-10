@@ -13,13 +13,14 @@ class OrderController extends Controller
 {
     public function __construct () {
 
-        $this->middleware('api.auth')->except(['index', 'show']);
-        $this->middleware( sprintf('role:%s', \App\Role::DISPATCHER ) )->except(['index', 'show']);
+        $this->middleware('cors')->except(['index', 'show']);
+        $this->middleware('api.auth')->except(['index', 'show', 'search']);
+        $this->middleware( sprintf('role:%s', \App\Role::DISPATCHER ) )->except(['index', 'show', 'search']);
     }
 
     public function index () {
 
-        $orders = Order::all()->load(['dispatcher', 'office']);
+        $orders = Order::with(['dispatcher.user', 'office'])->paginate(10);
         return response()->json([
             'status'    =>  'success',
             'code'      =>  200,
@@ -47,6 +48,33 @@ class OrderController extends Controller
             );
         }
 
+        return response()->json($data, $data['code']);
+    }
+
+
+    public function search ( Request $request ) {
+        $search = $request->input('search', null);
+
+        $orders = Order::with(['dispatcher.user', 'office'])->whereLike('num_order', $search)->paginate(10);
+
+        if ( !empty( $orders ) && $orders->count() !== 0 ) {
+            //  retornamos los datos
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'orders' =>  $orders
+            );
+
+        } else {
+            //  retornamos un mensaje de error
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'No hay resultados para tu busqueda'
+            );
+        }
+
+        //retornamos la respuesta y el codigo de respuesta http
         return response()->json($data, $data['code']);
     }
 

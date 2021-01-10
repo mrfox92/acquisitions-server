@@ -25,9 +25,13 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::post('/register', 'UserController@register');
 Route::post('/login', 'UserController@login');
-Route::put('/user/update', 'UserController@update');
+Route::get('/user', 'UserController@index');
+Route::put('/user/edit/{user}', 'UserController@update');
 Route::post('/user/checktoken', 'UserController@checkToken');
-Route::post('/user/upload', 'UserController@upload')->middleware(ApiAuthMiddleware::class);
+Route::get('/user/search', 'UserController@search');
+Route::post('/user/upload/{user}', 'UserController@upload')->middleware(ApiAuthMiddleware::class);
+Route::put('/user/role/{user}', 'UserController@updateRoleUser');
+
 
 //  construimos la ruta para acceder a nuestras imagenes
 Route::get('/user/image/{imageName}', 'UserController@getImage');
@@ -40,24 +44,44 @@ Route::delete('/user/delete/{id}', 'UserController@destroy');
 
 //  rutas Materiales
 Route::Resource('/materials', 'MaterialController');
+Route::get('/materials/material/list', 'MaterialController@getMaterials');
+Route::get('/materials/search/material', 'MaterialController@search');
 //  ruta para acceder a nuestras imagenes de materiales
 Route::post('/materials/upload', 'MaterialController@upload');
 Route::get('/materials/image/{imageName}', 'MaterialController@getImage');
 
 //  rutas Proveedores
 Route::Resource('/provider', 'ProviderController');
+//  busqueda proveedor
+Route::get('/provider/search/provider', 'ProviderController@search');
 
 //  rutas Departamentos municipio
 Route::Resource('/department', 'DepartmentController');
+Route::get('/department/search/department', 'DepartmentController@search');
 
 //  rutas oficinas municipio
 Route::Resource('/offices', 'OfficeController');
+Route::get('/offices/departments/list', 'OfficeController@getDeptos');
+Route::get('/offices/search/office', 'OfficeController@search');
+
+//  rutas facturas
+Route::resource('/invoices', 'InvoiceController');
+Route::get('/invoices/providers/list', 'InvoiceController@getProviders');
+Route::get('/invoices/provider/{provider}', 'InvoiceController@getInvoicesProvider');
+Route::get('/invoices/search/invoice', 'InvoiceController@search');
+
 
 //  rutas material invoice
 Route::Resource('/materialinvoice', 'MaterialInvoiceController');
 
+
+//  rutas adquisiciones
+Route::Resource('/acquisition', 'AcquisitionController');
+Route::get('/acquisition/order/detail/{id}', 'AcquisitionController@getOrderDetail');
+
 //  rutas ordenes dspacho
 Route::Resource('/order', 'OrderController');
+Route::get('/order/search/order', 'OrderController@search');
 
 //  rutas material order
 Route::Resource('/materialorder', 'MaterialOrderController');

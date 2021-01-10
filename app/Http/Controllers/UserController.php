@@ -6,16 +6,70 @@ use Illuminate\Http\Request;
 use App\Helpers\UploadImage;    //  hacemos uso de nuestro helper para subir imagenes
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule; //  reglas de validacion utilizar unique de una forma mas controlada
 use App\User;
+use App\Acquisition;
+use App\Dispatcher;
 
 class UserController extends Controller
 {
     public function __construct () {
         $this->middleware('cors')->except(['pruebas']);
-        $this->middleware('api.auth')->only(['destroy']);
-        $this->middleware( sprintf('role:%s', \App\Role::ADMIN) )->only(['destroy']);
+        $this->middleware('api.auth')->only(['update','destroy']);
+        //  crear un middleware para comprobar si quien intenta actualizar su perfil es el mismo usuario
+        $this->middleware( sprintf('role:%s', \App\Role::ADMIN) )->only(['updateRoleUser', 'destroy']);
         //  asignamos al middleware que unicamente puedan eliminar usuarios aquel usuario con
         //  privilegios de administrador y que debe estar autenticado en el sistema
+    }
+
+
+    public function index () {
+
+        $users = User::paginate(5);
+
+
+        if ( !empty( $users ) && is_object( $users ) ) {
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'users'     =>  $users
+            );
+        } else {
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'message'   =>  'No hay resultados que cargar'
+            );
+        }
+
+        return response()->json($data, $data['code']);
+    }
+
+    public function search ( Request $request ) {
+
+        $search = $request->input('search', null);
+        $users = User::whereLike('name', $search)->orWhereLike('last_name', $search)->paginate(5);
+
+        if ( !empty( $users ) && $users->count() !== 0 ) {
+
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'users'   =>  $users
+            );
+
+        } else {
+
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'No hemos encontrado resultados'
+            );
+        }
+
+        return response()->json($data, $data['code']);
+
+
     }
 
     public function pruebas ( Request $request ) {
@@ -119,6 +173,11 @@ class UserController extends Controller
                 //  guardamos los datos del usuario
                 $user->save();
 
+                //  creamos un despachador
+                Dispatcher::create([
+                    'user_id'   =>  $user->id
+                ])->save();
+
                 //  ordenamos nuestro array de respuesta
                 $data = array (
                     'status'    =>  'success',
@@ -204,8 +263,10 @@ class UserController extends Controller
     }
 
 
-    public function update ( Request $request ) {
+    public function update ( Request $request, $id ) {
 
+        //  obtenemos el usuario de base de datos
+        $user = User::find($id);
         //  comprobamos si el usuario está identificado a traves de nuestro middleware
         //  recoger los datos por POST
         $json = $request->input('json', null);
@@ -214,12 +275,9 @@ class UserController extends Controller
         //  decodificamos el json en un array para la validacion
         $params_array = json_decode($json, true);
 
-        //  comprobamos si existe checktoken
-        if ( $checkToken && !empty( $params_array ) ) {
+        //  verificamos si viene el json mal formado o el usuario devuelto es vacio
+        if ( !empty( $params_array ) && !empty( $params ) && !empty( $user ) ) {
 
-            //  capturamos la data del usuario registrado
-            $user = $jwtAuth->checkToken($token, true);
-            // var_dump($user); die();
             //  personalizamos los mensajes para nuestra validacion
             $messages = [
                 'name.required'         =>  'El nombre de usuario es requerido',
@@ -228,40 +286,57 @@ class UserController extends Controller
                 'last_name.alpha'       =>  'El apellido de usuario solo debe contener letras',
                 'email.required'        =>  'El email usuario es requerido',
                 'email,email'           =>  'Debe ingresar un formato de email válido',
-                'email.unique'          =>  'El correo ingresado ya existe'
+                'email.unique'          =>  'El correo ingresado ya existe y pertenece a otro usuario'
             ];
             //  validamos los datos
             $validate = Validator::make($params_array, [
                 'name'  =>  'required|alpha',
                 'last_name' =>  'required|alpha',
-                'email'     =>  'required|email|unique:users,'.$user->sub    //  agregamos excepcion de nuestro correo
+                'email'     =>  [
+                    'required',
+                    'email',
+                    Rule::unique('users')->ignore($user->id, 'id')    //  agregamos la excepcion del correo propio
+                ]
             ], $messages);
-            //  quitamos los datos que no queremos actualizar de la peticion
-            unset($params_array['id']);
-            unset($params_array['role_id']);
-            unset($params_array['password']);
-            unset($params_array['remember_token']);
-            unset($params_array['created_at']);
 
-            //  actualizamos el slug
-            // $slug_user = $user->name
-            //  actualizamos los datos
-            $user_update = User::where('id', $user->sub)->update( $params_array );
-            //  devolvemos array con los resultados
-            $data = array(
-                'status'    =>  'success',
-                'code'      =>  200,
-                'message'   =>  'Usuario actualizado exitosamente',
-                'user'      =>  $user,
-                'changes'   =>  $params_array
-            );
+            //  validamos en caso de errores de validacion
+            if ( $validate->fails() ) {
+
+                $data = array(
+                    'status'    =>  'error',
+                    'code'      =>  400,
+                    'errors'    =>  $validate->errors()
+                );
+
+            } else {
+
+                //  quitamos los datos que no queremos actualizar de la peticion
+                unset($params_array['id']);
+                unset($params_array['role_id']);
+                unset($params_array['password']);
+                unset($params_array['remember_token']);
+                unset($params_array['created_at']);
+    
+                //  actualizamos el slug
+                $slug_user = ($user->last_name !== null) ? $user->name . " " . $user->last_name : $user->name;
+                $params_array['slug'] = \Str::slug( $slug_user, '-' );
+                //  actualizamos los datos
+                $user->fill( $params_array )->save();
+                //  devolvemos array con los resultados
+                $data = array(
+                    'status'    =>  'success',
+                    'code'      =>  200,
+                    'message'   =>  'Usuario actualizado exitosamente',
+                    'user'      =>  $user,
+                );
+            }
 
         } else {
             //  devolvemos un mensaje de error
             $data = array(
                 'status'    =>  'error',
                 'code'      =>  400,
-                'message'   =>  'El usuario no está identificado'
+                'message'   =>  'Los datos que deseas actualizar no han sido enviados correctamente o el usuario no existe'
             );
         }
 
@@ -269,42 +344,170 @@ class UserController extends Controller
         return response()->json($data, $data['code']);
     }
 
-    public function upload ( Request $request ) {
+    public function updateRoleUser ( Request $request, $id ) {
+        //  obtenemos el usuario de base de datos
+        $user = User::find($id);
+        //  comprobamos si el usuario está identificado a traves de nuestro middleware
+        //  recoger los datos por POST
+        $json = $request->input('json', null);
+        //  decodificamos el json en un objeto
+        $params = json_decode($json);
+        //  decodificamos el json en un array para la validacion
+        $params_array = json_decode($json, true);
 
-        //  personalizamos los mensajes de validacion
-        $messages = [
-            'file0.required'    =>  'La imagen es requerida',
-            'file0.image'       =>  'El archivo a subir debe ser una imagen',
-            'file0.mimes'       =>  'El formato debe ser una imagen valida'
-        ];
+        //  verificamos si viene el json mal formado o el usuario devuelto es vacio
+        if ( !empty( $params_array ) && !empty( $params ) && !empty( $user ) ) {
 
-        //  validamos los datos que vienen desde el formulario
-        $validate = Validator::make($request->all(),[
-            'file0' =>  'required|image|mimes:jpg,png,jpeg,gif'
-        ], $messages);
+            //  personalizamos los mensajes para nuestra validacion
+            $messages = [
+                'role_id.required' =>  'El rol de usuario es requerido',
+            ];
+            //  validamos los datos
+            $validate = Validator::make($params_array, [
+                'role_id'  =>  'required',
+            ], $messages);
 
-        //  validamos si el archivo file0 no viene o si la validacion falla
+            //  validamos en caso de errores de validacion
+            if ( $validate->fails() ) {
 
-        if ( !$request->file('file0') || $validate->fails() ) {
-            //  mensaje de error
+                $data = array(
+                    'status'    =>  'error',
+                    'code'      =>  400,
+                    'errors'    =>  $validate->errors()
+                );
+
+            } else {
+
+                //  quitamos los datos que no queremos actualizar de la peticion
+                unset($params_array['id']);
+                unset($params_array['password']);
+                unset($params_array['remember_token']);
+                unset($params_array['created_at']);
+
+                //  enviar el role_id del user sin actualizar a una funcion
+                $this->dropUserRole( $user->role_id, $user->id );
+                //  eliminar de la tabla respectiva el registro donde exista el user_id que corresponde al usuario
+                //  actualizamos los datos
+                $user->fill( $params_array )->save();
+                //  crear una funcion para crear un registro segun el nuevo role asignado, sea para adquisiciones o para despachos
+                $this->createUserRole( $user->role_id, $user->id );
+                //  devolvemos array con los resultados
+                $data = array(
+                    'status'    =>  'success',
+                    'code'      =>  200,
+                    'message'   =>  'Role usuario actualizado exitosamente',
+                    'user'      =>  $user,
+                );
+            }
+
+        } else {
+            //  devolvemos un mensaje de error
             $data = array(
                 'status'    =>  'error',
                 'code'      =>  400,
-                'message'   =>  'Error al subir imagen',
-                'errors'    =>  $validate->errors()
+                'message'   =>  'Los datos que deseas actualizar no han sido enviados correctamente o el usuario no existe'
             );
+        }
 
+        return response()->json($data, $data['code']);
+    }
+
+
+    private function createUserRole( $role_id, $user_id ) {
+
+        switch ($role_id) {
+            case \App\Role::ACQUISITION:
+                Acquisition::create([
+                    'user_id'   =>  $user_id
+                ])->save();
+                break;
+            case \App\Role::DISPATCHER:
+                Dispatcher::create([
+                    'user_id'   =>  $user_id
+                ])->save();
+            case \App\Role::ADMIN:
+                break;
+
+        }
+    }
+
+    private function dropUserRole( $role_id, $user_id ) {
+
+        switch ($role_id) {
+            case \App\Role::ACQUISITION:
+                Acquisition::where('user_id', $user_id)->delete();
+            break;
+            case \App\Role::DISPATCHER:
+                Dispatcher::where('user_id', $user_id)->delete();
+            break;
+            case \App\Role::ADMIN:
+            break;
+        }
+    }
+
+    public function upload ( Request $request, $id ) {
+
+        //  obtener data usuario para actualizar su avatar
+        $user = User::find($id);
+
+        //  comprobar que el usuario existe
+
+        if ( !empty( $user ) && !is_null( $user ) ) {
+
+            //  personalizamos los mensajes de validacion
+            $messages = [
+                'file0.required'    =>  'La imagen es requerida',
+                'file0.image'       =>  'El archivo a subir debe ser una imagen',
+                'file0.mimes'       =>  'El formato debe ser una imagen valida'
+            ];
+    
+            //  validamos los datos que vienen desde el formulario
+            $validate = Validator::make($request->all(),[
+                'file0' =>  'required|image|mimes:jpg,png,jpeg,gif'
+            ], $messages);
+    
+            //  validamos si el archivo file0 no viene o si la validacion falla
+    
+            if ( !$request->file('file0') || $validate->fails() ) {
+                //  mensaje de error
+                $data = array(
+                    'status'    =>  'error',
+                    'code'      =>  400,
+                    'message'   =>  'Error al subir imagen',
+                    'errors'    =>  $validate->errors()
+                );
+    
+            } else {
+
+                //  comprobar si existe la imagen
+                if ( !is_null( $user->avatar ) ) {
+                    //  eliminar imagen actual del directorio de imagenes users
+                    \Storage::delete('users/'.$user->avatar);
+                }
+                //  subimos la imagen nueva
+                $avatar = UploadImage::uploadFile('file0', 'users');
+                //  ahora añadimos la imagen nueva a la request
+                $request->merge(['avatar' => $avatar]);
+
+                //  actualizo la imagen del usuario
+                $user->fill( $request->input() )->save();
+                //  devolver el resultado
+                $data = array(
+                    'status'    =>  'success',
+                    'code'      =>  200,
+                    'message'   =>  'Imagen de usuario ha sido actualizado exitosamente',
+                    'avatar'    =>  $avatar,
+                    'user'      =>  $user
+                );
+    
+            }
         } else {
-            //  recoger datos de la peticion
-            //  llamamos a nuestro helper para guardar la imagen y retornar el nombre para guardar en base de datos
-            $avatar = UploadImage::uploadFile('file0', 'users');
-            //  devolver el resultado
-            $data = array(
-                'status'    =>  'success',
-                'code'      =>  200,
-                'avatar'    =>  $avatar
-            );
 
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'Usuario no existe'
+            );
         }
 
 
@@ -362,7 +565,19 @@ class UserController extends Controller
         if ( !empty( $user ) && isset( $user->id ) ) {
 
             try {
-                $user->delete();
+
+                //  implementar borrado lógico
+                $avatar_user = $user->avatar;
+                //  finalmente eliminamos el registro
+                $user_deleted = $user->delete();
+
+                if ( $user_deleted ) {
+
+                    if ( !is_null( $avatar_user ) ) {
+                        //  eliminar imagen actual del directorio de imagenes users
+                        \Storage::delete('users/'.$avatar_user);
+                    }
+                }
 
                 $data = array(
                     'status'    =>  'success',

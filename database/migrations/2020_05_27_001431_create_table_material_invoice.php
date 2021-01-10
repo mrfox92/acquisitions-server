@@ -24,6 +24,7 @@ class CreateTableMaterialInvoice extends Migration
             $table->decimal('iva');
             $table->decimal('total_cost');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

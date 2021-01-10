@@ -23,6 +23,7 @@ class CreateInvoicesTable extends Migration
             $table->timestamp('emission_date')->nullable();
             $table->timestamp('expiration_date')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

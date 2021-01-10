@@ -10,19 +10,22 @@ class DepartmentController extends Controller
 {
     public function __construct () {
 
-        $this->middleware('api.auth')->except(['index', 'show']);
-        $this->middleware( sprintf('role:%s', \App\Role::ACQUISITION ) )->except(['index', 'show']);
+        $this->middleware('cors');
+        $this->middleware('api.auth')->except(['index', 'show', 'search']);
+        $this->middleware( sprintf('role:%s', \App\Role::ACQUISITION ) )->except(['index', 'show', 'search']);
     }
 
     public function index () {
 
-        $departments = Department::all();
+        $departments = Department::paginate(10);
 
-        return response()->json([
+        $data = array(
             'status'        =>  'success',
             'code'          =>  200,
             'departments'   =>  $departments
-        ], 200);
+        ); 
+
+        return response()->json($data, $data['code']);
 
     }
 
@@ -46,6 +49,32 @@ class DepartmentController extends Controller
             );
         }
 
+        return response()->json($data, $data['code']);
+    }
+
+    public function search ( Request $request ) {
+        $search = $request->input('search', null);
+
+        $departments = Department::whereLike('name', $search)->paginate(10);
+
+        if ( !empty( $departments ) && $departments->count() !== 0 ) {
+            //  retornamos los datos
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'departments' =>  $departments
+            );
+
+        } else {
+            //  retornamos un mensaje de error
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'No hay resultados para tu busqueda'
+            );
+        }
+
+        //retornamos la respuesta y el codigo de respuesta http
         return response()->json($data, $data['code']);
     }
 

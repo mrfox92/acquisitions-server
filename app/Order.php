@@ -3,9 +3,11 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['num_order', 'dispatcher_id', 'office_id', 'status', 'name_responsible'];
     
     const ENABLED = 1;
@@ -23,6 +25,10 @@ class Order extends Model
 
     public function materialsOrders () {
         return $this->hasMany(MaterialOrder::class);
+    }
+
+    public function scopeWhereLike($query, $column, $value) {
+        return $query->where($column, 'like', "%$value%");
     }
 }
     

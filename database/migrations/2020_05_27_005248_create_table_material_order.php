@@ -21,6 +21,7 @@ class CreateTableMaterialOrder extends Migration
             $table->foreign('order_id')->references('id')->on('orders');
             $table->bigInteger('quantity');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

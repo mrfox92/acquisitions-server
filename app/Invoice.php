@@ -3,10 +3,14 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    protected $fillable = ['invoice_number', 'provider_id', 'emission_date', 'expiration_date'];
+
+    use SoftDeletes;
+
+    protected $fillable = ['invoice_number', 'acquisition_id', 'provider_id', 'emission_date', 'expiration_date'];
     
     public function acquisition () {
         return $this->belongsTo(Acquisition::class);
@@ -19,5 +23,10 @@ class Invoice extends Model
 
     public function materialsInvoices () {
         return $this->hasMany(MaterialInvoice::class);
+    }
+
+    public function scopeWhereLike($query, $column, $value)
+    {
+        return $query->where($column, 'like', "%$value%");
     }
 }

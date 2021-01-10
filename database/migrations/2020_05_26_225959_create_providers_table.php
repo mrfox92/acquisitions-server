@@ -22,6 +22,7 @@ class CreateProvidersTable extends Migration
             $table->string('phone')->nullable();
             $table->string('email')->unique();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -3,10 +3,13 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Acquisition extends Model
 {
-    protected $fillable = ['user_id'];
+    use SoftDeletes;    //  para implementar borrado logico
+
+    protected $fillable = ['user_id', 'created_at'];
 
     //  un usuario adquisicion corresponde a un usuario de la tabla User
     public function user () {

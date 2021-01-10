@@ -10,21 +10,35 @@ use App\Department;
 class OfficeController extends Controller
 {
     public function __construct () {
+        $this->middleware('cors');
+        $this->middleware('api.auth')->except(['index', 'show', 'getDeptos', 'search']);
 
-        $this->middleware('api.auth')->except(['index', 'show']);
-
-        $this->middleware( sprintf('role:%s', \App\Role::ACQUISITION) )->except(['index', 'show']);
+        $this->middleware( sprintf('role:%s', \App\Role::ACQUISITION) )->except(['index', 'show', 'getDeptos', 'search']);
     }
 
     public function index () {
 
-        $offices = Office::all()->load('department');
+        $offices = Office::with(['department'])->paginate(10);
 
-        return response()->json([
+        $data = array(
             'status'    =>  'success',
             'code'      =>  200,
             'offices'   =>  $offices
-        ], 200);
+        );
+
+        return response()->json($data, $data['code']);
+    }
+
+    public function getDeptos () {
+        $departments = Department::all();
+
+        $data = array(
+            'status'        =>  'success',
+            'code'          =>  200,
+            'departments'   =>  $departments
+        );
+
+        return response()->json($data, $data['code']);
     }
 
     public function show ( $id ) {
@@ -49,6 +63,33 @@ class OfficeController extends Controller
         }
 
         return response()->json($data, $data['code']);
+    }
+
+    public function search ( Request $request ) {
+
+        $search = $request->input('search', null);
+
+        $offices = Office::with(['department'])->whereLike('name', $search)->paginate(10);
+
+        if ( !empty( $offices ) && $offices->count() !== 0 ) {
+
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>   200,
+                'offices'   =>  $offices
+            );
+
+        } else {
+
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>   404,
+                'message'   =>  'Busqueda sin resultados'
+            );
+        }
+
+        return response()->json($data, $data['code']);
+
     }
 
     public function store ( Request $request ) {
@@ -137,6 +178,7 @@ class OfficeController extends Controller
             } else {
                 //  quitamos los datos que no queremos actualizar
                 unset( $params_array['id'] );
+                unset( $params_array['department'] );
                 unset( $params_array['created_at'] );
 
                 //  actualizamos los datos

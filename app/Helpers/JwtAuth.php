@@ -45,6 +45,7 @@ class JwtAuth {
                     'name'  =>  $user->name,
                     'last_name' =>  $user->last_name,
                     'slug' =>  \Str::slug($slug_user, '-'),
+                    'avatar'    =>  $user->avatar,
                     'iat'       =>  time(),
                     'exp'       =>  time() + ( 7 * 24 * 60 * 60 )   //  1 semana expresada en segundos
                 );
@@ -67,7 +68,6 @@ class JwtAuth {
                         'status'    =>  'success',
                         'message'   =>  'Login correcto',
                         'user'      =>  $decoded,
-                        'token'     =>  $jwt
                     );
 
                 } else {
@@ -75,8 +75,10 @@ class JwtAuth {
                     //  devolvemos el jwt
                     $data = array(
                         'status'    =>  'success',
+                        'id'        =>  $user->id,
                         'message'   =>  'Login correcto',
-                        'token'   =>  $jwt
+                        'user'      =>  $user,
+                        'token'     =>  $jwt
                     );
                 }
 

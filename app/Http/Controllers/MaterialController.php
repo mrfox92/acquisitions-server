@@ -15,20 +15,34 @@ class MaterialController extends Controller
     //  aplicamos el middleware de autenticacion y creamos excepcion para las rutas index y show
     public function __construct () {
         //  middleware auth
-        $this->middleware('api.auth')->except(['index', 'show', 'getImage']);
+        $this->middleware('cors');
+        $this->middleware('api.auth')->except(['index', 'show', 'getImage', 'search', 'getMaterials']);
         //  middleware role
-        $this->middleware(sprintf('role:%s', \App\Role::ACQUISITION))->except(['index', 'show', 'getImage']);
+        $this->middleware(sprintf('role:%s', \App\Role::ACQUISITION))->except(['index', 'show', 'getImage', 'search', 'getMaterials']);
     }
 
     public function index () {
 
-        $materials = Material::all();
+        $materials = Material::with(['acquisition.user'])->paginate(25);
 
-        return response()->json([
-            'status'    =>  'success',
-            'code'      =>  200,
-            'materials'    =>  $materials
-        ]);
+        if ( !empty( $materials ) && is_object( $materials ) ) {
+ 
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'materials' =>  $materials
+            );
+
+        } else {
+
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'No hay resultados que cargar'
+            );
+        }
+
+        return response()->json($data, $data['code']);
     }
 
     public function show ( $id ) {
@@ -52,6 +66,55 @@ class MaterialController extends Controller
             );
         }
 
+        return response()->json($data, $data['code']);
+    }
+    public function getMaterials () {
+        $materials = Material::all();
+
+        if ( !empty( $materials ) && is_object( $materials ) ) {
+ 
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'materials' =>  $materials
+            );
+
+        } else {
+
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'No hay resultados que cargar'
+            );
+        }
+
+        return response()->json($data, $data['code']);
+    }
+
+
+    public function search ( Request $request ) {
+        $search = $request->input('search', null);
+
+        $materials = Material::whereLike('bar_code', $search)->orWhereLike('name', $search)->paginate(10);
+
+        if ( !empty( $materials ) && $materials->count() !== 0 ) {
+            //  retornamos los datos
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'materials' =>  $materials
+            );
+
+        } else {
+            //  retornamos un mensaje de error
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'No hay resultados para tu busqueda'
+            );
+        }
+
+        //retornamos la respuesta y el codigo de respuesta http
         return response()->json($data, $data['code']);
     }
 
@@ -173,7 +236,7 @@ class MaterialController extends Controller
                 'unity_type'    =>  'required',
                 'bar_code'      =>  [
                     'required',
-                    Rule::unique('materials')->ignore($material->id, 'id')
+                    Rule::unique('materials')->ignore($material->bar_code, 'bar_code')
                 ]
             ], $messages);
 
@@ -201,7 +264,8 @@ class MaterialController extends Controller
                 $params_array['slug'] = \Str::slug($params_array['name'], '-');
                 //  sacar el acquisition_id a partir del usuario autenticado y con role validado
                 //  actualizar el registro(Material)
-                $material_updated = Material::where('id', $material->id)->update($params_array);
+                // $material_updated = Material::where('id', $material->id)->update($params_array);
+                $material->fill( $params_array )->save();
                 //  respondemos
                 $data = array(
                     'status'    =>  'success',

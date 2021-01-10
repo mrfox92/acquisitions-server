@@ -12,13 +12,14 @@ class ProviderController extends Controller
 {
     public function __construct () {
         //  middleware autenticación
-        $this->middleware('api.auth')->except(['index', 'show']);
+        $this->middleware('cors')->except(['index', 'show']);
+        $this->middleware('api.auth')->except(['index', 'show', 'search']);
         //  middleware comprobación privilegios usuarios adquisiciones
-        $this->middleware( sprintf('role:%s', \App\Role::ACQUISITION) )->except(['index', 'show']);
+        $this->middleware( sprintf('role:%s', \App\Role::ACQUISITION) )->except(['index', 'show', 'search']);
     }
 
     public function index () {
-        $providers = Provider::all();
+        $providers = Provider::paginate(10);
 
         return response()->json([
             'status'    =>  'success',
@@ -48,6 +49,33 @@ class ProviderController extends Controller
             );
         }
 
+        return response()->json($data, $data['code']);
+    }
+
+
+    public function search ( Request $request ) {
+        $search = $request->input('search', null);
+
+        $providers = Provider::whereLike('rut', $search)->orWhereLike('name', $search)->paginate(10);
+
+        if ( !empty( $providers ) && $providers->count() !== 0 ) {
+            //  retornamos los datos
+            $data = array(
+                'status'    =>  'success',
+                'code'      =>  200,
+                'providers' =>  $providers
+            );
+
+        } else {
+            //  retornamos un mensaje de error
+            $data = array(
+                'status'    =>  'error',
+                'code'      =>  404,
+                'message'   =>  'No hay resultados para tu busqueda'
+            );
+        }
+
+        //retornamos la respuesta y el codigo de respuesta http
         return response()->json($data, $data['code']);
     }
 
@@ -183,13 +211,13 @@ class ProviderController extends Controller
                 $params_array['url_web'] = !empty($params_array['url_web']) ? $params_array['url_web'] : $provider->url_web;
                 $params_array['phone'] = !empty($params_array['phone']) ? $params_array['phone'] : $provider->phone;
                 //  actualizar el registro en DB
-                $provider_updated = Provider::where('id', $provider->id)->updateOrCreate($params_array);
+                $provider->fill( $params_array )->save();
                 //  retornar respuesta
                 $data = array(
                     'status'    =>  'success',
                     'code'      =>  200,
                     'message'   =>  'Datos provedor actualizados exitosamente',
-                    'provider_updated'  =>  $provider_updated
+                    'provider_updated'  =>  $provider
                 );
             }
 

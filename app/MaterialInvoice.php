@@ -3,9 +3,11 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MaterialInvoice extends Model
 {
+    use SoftDeletes;
     // public $table = 'material_invoices';
     protected $fillable = ['material_id', 'invoice_id', 'quantity', 'unity_cost', 'iva', 'total_cost'];
 
