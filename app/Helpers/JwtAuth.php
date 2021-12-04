@@ -48,6 +48,7 @@ class JwtAuth {
                     'avatar'    =>  $user->avatar,
                     'iat'       =>  time(),
                     'exp'       =>  time() + ( 7 * 24 * 60 * 60 )   //  1 semana expresada en segundos
+                    //  reducir duración del token a 1 hora
                 );
     
                 //  utilizamos la librería JWT para codificar los datos del token
@@ -57,6 +58,12 @@ class JwtAuth {
                 $jwt = JWT::encode($token, $this->key, 'HS256');
                 //  decodificamos el token
                 $decoded = JWT::decode($jwt, $this->key, ['HS256']);
+
+                
+                $menu = new MenuFrontend();
+
+                //  retornamos el menu
+                $menu = $menu::getMenu( $user->role_id );
     
                 //  comprobamos si nuestro parametro para devolver el token viene o no nulo
     
@@ -68,6 +75,7 @@ class JwtAuth {
                         'status'    =>  'success',
                         'message'   =>  'Login correcto',
                         'user'      =>  $decoded,
+                        'menu'      =>  $menu
                     );
 
                 } else {
@@ -78,6 +86,7 @@ class JwtAuth {
                         'id'        =>  $user->id,
                         'message'   =>  'Login correcto',
                         'user'      =>  $user,
+                        'menu'      =>  $menu,
                         'token'     =>  $jwt
                     );
                 }

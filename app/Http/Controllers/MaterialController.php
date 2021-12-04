@@ -6,9 +6,15 @@ use Illuminate\Http\Request;
 use App\Helpers\UploadImage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule; //  reglas de validacion utilizar unique de una forma mas controlada
+use Illuminate\Support\Str;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\File;
 use App\Material;
 use App\Acquisition;
+use App\Helpers\JwtAuth;
+use App\Role;
 use App\User;
+use Illuminate\Support\Facades\Storage;
 
 class MaterialController extends Controller
 {
@@ -18,7 +24,7 @@ class MaterialController extends Controller
         $this->middleware('cors');
         $this->middleware('api.auth')->except(['index', 'show', 'getImage', 'search', 'getMaterials']);
         //  middleware role
-        $this->middleware(sprintf('role:%s', \App\Role::ACQUISITION))->except(['index', 'show', 'getImage', 'search', 'getMaterials']);
+        $this->middleware(sprintf('role:%s', Role::ACQUISITION))->except(['index', 'show', 'getImage', 'search', 'getMaterials']);
     }
 
     public function index () {
@@ -131,7 +137,7 @@ class MaterialController extends Controller
         //  recogemos los datos que vienen por post
         $token = $request->header('Authorization');
         //  comprobamos la data del token
-        $jwtAuth = new \JwtAuth();
+        $jwtAuth = new JwtAuth();
 
         $json = $request->input('json', null);
         //  decodificamos los datos en un objeto
@@ -176,7 +182,7 @@ class MaterialController extends Controller
                 $material->bar_code = $params_array['bar_code'];
                 $material->acquisition_id = $user_acquisition->id;
                 $material->name = $params_array['name'];
-                $material->slug = \Str::slug($params_array['name'], '-');
+                $material->slug = Str::slug($params_array['name'], '-');
                 $material->unity_type = $params_array['unity_type'];
 
                 //  guardamos en DB el nuevo material
@@ -212,7 +218,7 @@ class MaterialController extends Controller
         //  obtenemos el token desde la cabecera de la petición
         $token = $request->header('Authorization');
         //  comprobamos la data del token
-        $jwtAuth = new \JwtAuth();
+        $jwtAuth = new JwtAuth();
         //  Recoger los datos desde el formulario en un json
         $json = $request->input('json', null);
         //  sacamos los datos en un objeto
@@ -261,7 +267,7 @@ class MaterialController extends Controller
                 //  asignamos el id adquisiciones que está autenticado y realizando la modificacion
                 $params_array['acquisition_id'] = $user_acquisition->id;
                 //  actualizamos el slug
-                $params_array['slug'] = \Str::slug($params_array['name'], '-');
+                $params_array['slug'] = Str::slug($params_array['name'], '-');
                 //  sacar el acquisition_id a partir del usuario autenticado y con role validado
                 //  actualizar el registro(Material)
                 // $material_updated = Material::where('id', $material->id)->update($params_array);
@@ -287,38 +293,75 @@ class MaterialController extends Controller
         return response()->json($data, $data['code']);
     }
 
-    public function upload ( Request $request ) {
+    public function upload ( Request $request, $id ) {
 
-        $messages = [
-            'file0.required'    =>  'La imagen es requerida',
-            'file0.image'       =>  'El archivo a subir debe ser una imagen',
-            'file0.mimes'       =>  'El formato debe ser una imagen valida'
-        ];
+        //  obtener data material para actualizar su imagen
+        $material = Material::find($id);
 
-        //  validamos los datos que vienen desde el formulario
-        $validate = Validator::make($request->all(),[
-            'file0' =>  'required|image|mimes:jpg,png,jpeg,gif'
-        ], $messages);
+        if ( !empty( $material ) && !is_null( $material ) ) {
 
-        if ( !$request->file('file0') || $validate->fails() ) {
-            //  mensaje de error
+            $messages = [
+                'file0.required'    =>  'La imagen es requerida',
+                'file0.image'       =>  'El archivo a subir debe ser una imagen',
+                'file0.mimes'       =>  'El formato debe ser una imagen valida'
+            ];
+    
+            //  validamos los datos que vienen desde el formulario
+            $validate = Validator::make($request->all(),[
+                'file0' =>  'required|image|mimes:jpg,png,jpeg,gif'
+            ], $messages);
+    
+            if ( !$request->file('file0') || $validate->fails() ) {
+                //  mensaje de error
+                $data = array(
+                    'status'    =>  'error',
+                    'code'      =>  400, 
+                    'message'   =>  'Error al subir imagen',
+                    'errors'    =>  $validate->errors()
+                );
+                
+            } else {
+
+                
+                //  comprobar si existe la imagen
+                if ( !is_null( $material->picture ) ) {
+                    //  eliminar imagen actual del directorio de imagenes users
+                    Storage::delete('materials/'.$material->picture);
+                }
+                //  subimos la imagen nueva
+                $picture = UploadImage::uploadFile('file0', 'materials');
+                //  ahora añadimos la imagen nueva a la request
+                $request->merge(['picture' => $picture]);
+
+                //  actualizo la imagen del usuario
+                $material->fill( $request->input() )->save();
+                //  devolver el resultado
+                $data = array(
+                    'status'    =>  'success',
+                    'code'      =>  200,
+                    'message'   =>  'La imagen ha sido agregada exitosamente',
+                    'picture'   =>  $picture,
+                    'material'  =>  $material
+                );
+                //  recoger datos de la peticion
+                //  llamamos a nuestro helper para guardar la imagen y retornar el nombre para guardar en base de datos
+                // $picture = UploadImage::uploadFile('file0', 'materials');
+                // //  devolver el resultado
+                // $data = array(
+                //     'status'    =>  'success',
+                //     'code'      =>  200,
+                //     'message'   =>  'La imagen ha sido agregada exitosamente',
+                //     'picture'    =>  $picture
+                // );
+    
+            }
+
+        } else {
+
             $data = array(
                 'status'    =>  'error',
-                'code'      =>  400, 
-                'message'   =>  'Error al subir imagen',
-                'errors'    =>  $validate->errors()
-            );
-            
-        } else {
-            //  recoger datos de la peticion
-            //  llamamos a nuestro helper para guardar la imagen y retornar el nombre para guardar en base de datos
-            $picture = UploadImage::uploadFile('file0', 'materials');
-            //  devolver el resultado
-            $data = array(
-                'status'    =>  'success',
-                'code'      =>  200,
-                'message'   =>  'La imagen ha sido agregada exitosamente',
-                'picture'    =>  $picture
+                'code'      =>  404,
+                'message'   =>  'Material indicado no existe'
             );
 
         }
@@ -330,9 +373,9 @@ class MaterialController extends Controller
         //  reconstruimos la ruta a la imagen
         $file = sprintf('storage/materials/%s', $imageName);
         //  verificamos si existe la imagen
-        if ( \File::exists($file) ) {
+        if ( File::exists($file) ) {
             //  retornamos la imagen
-            return \Image::make($file)->response();
+            return Image::make($file)->response();
         } else {
             
             return response()->json([

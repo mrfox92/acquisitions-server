@@ -20,7 +20,7 @@ class OrderController extends Controller
 
     public function index () {
 
-        $orders = Order::with(['dispatcher.user', 'office'])->paginate(10);
+        $orders = Order::with(['dispatcher.user', 'materialsOrders.material', 'offices'])->where('status', Order::PROCESING)->paginate(10);
         return response()->json([
             'status'    =>  'success',
             'code'      =>  200,
@@ -30,7 +30,7 @@ class OrderController extends Controller
 
     public function show ( $id ) {
 
-        $order = Order::with(['dispatcher', 'office'])->where('id', $id)->first();
+        $order = Order::with(['dispatcher', 'offices'])->where('id', $id)->first();
         if ( !empty( $order ) && isset( $order->id ) ) {
             
             $data = array(
@@ -55,7 +55,7 @@ class OrderController extends Controller
     public function search ( Request $request ) {
         $search = $request->input('search', null);
 
-        $orders = Order::with(['dispatcher.user', 'office'])->whereLike('num_order', $search)->paginate(10);
+        $orders = Order::with(['dispatcher.user', 'offices', 'materialsOrders.material'])->whereLike('name_responsible', $search)->paginate(10);
 
         if ( !empty( $orders ) && $orders->count() !== 0 ) {
             //  retornamos los datos

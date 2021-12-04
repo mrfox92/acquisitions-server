@@ -15,17 +15,15 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->bigInteger('num_order');
             $table->unsignedInteger('dispatcher_id');
             $table->foreign('dispatcher_id')->references('id')->on('dispatchers');
-            $table->unsignedInteger('office_id');
-            $table->foreign('office_id')->references('id')->on('offices');
             $table->enum('status', [
                 \App\Order::ENABLED,
                 \App\Order::PROCESING,
-                \App\Order::FINISHED
-            ]);
-            $table->string('name_responsible');
+                \App\Order::FINISHED,
+                \App\Order::CANCELED
+            ])->default(\App\Order::ENABLED);
+            $table->string('name_responsible')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

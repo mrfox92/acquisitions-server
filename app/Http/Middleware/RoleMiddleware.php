@@ -7,6 +7,7 @@ use App\User;
 
 use App\Acquisition;
 use App\Dispatcher;
+use App\Helpers\JwtAuth;
 
 class RoleMiddleware
 {
@@ -22,7 +23,7 @@ class RoleMiddleware
         //  verificar que el usuario autenticado tenga los privilegios correspondientes
         $token = $request->header('Authorization');
         //  comprobamos la data del token
-        $jwtAuth = new \JwtAuth();
+        $jwtAuth = new JwtAuth();
         //  decodificamos el token para la data del usuario autenticad
         $user = $jwtAuth->checkToken($token, true);
         //  comprobamos si el resultado de la data de usuario es válida

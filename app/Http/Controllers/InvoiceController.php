@@ -22,7 +22,7 @@ class InvoiceController extends Controller
      */
     public function index()
     {
-        $invoices = Invoice::with(['provider'])->paginate(10);
+        $invoices = Invoice::with(['provider', 'materialsInvoices.material'])->paginate(10);
 
         if ( !empty( $invoices ) && $invoices->count() !== 0 ) {
 
@@ -38,7 +38,8 @@ class InvoiceController extends Controller
             $data = array(
                 'status'    =>  'error',
                 'code'      =>  404,
-                'message'   =>  'No hay facturas registradas'
+                'message'   =>  'No hay facturas registradas',
+                'invoices'  =>  $invoices
 
             );
 
@@ -161,7 +162,9 @@ class InvoiceController extends Controller
 
     public function getInvoicesProvider ( $id ) {
 
-        $invoices = Invoice::where('provider_id', $id)->get();
+        $invoices = Invoice::with(['materialsInvoices'])
+            ->withCount('materialsInvoices')
+            ->where('provider_id', $id)->get();
 
         if ( is_object( $invoices ) && !empty( $invoices ) ) {
 

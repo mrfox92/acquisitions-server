@@ -18,7 +18,6 @@ class CreateAcquisitionsTable extends Migration
             $table->unsignedInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
             $table->timestamps();
-            $table->softDeletes();  //  implementando borrado lógico
         });
     }
 

@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule; //  reglas de validacion utilizar unique de una 
 use App\User;
 use App\Acquisition;
 use App\Dispatcher;
+use App\Helpers\MenuFrontend;
 
 class UserController extends Controller
 {
@@ -166,24 +167,33 @@ class UserController extends Controller
 
                 $user->name = $params_array['name'];
                 $user->last_name = $params_array['last_name'];
-                $user->slug =   Str::slug($slug, '-');
+                $user->slug =  Str::slug($slug, '-');
+                $user->avatar = null;
                 $user->email = $params_array['email'];
                 $user->password = $user_password;
 
                 //  guardamos los datos del usuario
                 $user->save();
 
+                //  *** MENU *** 
+                $menu = new MenuFrontend();
+
+                //  retornamos el menu
+                $menu = $menu::getMenu( $user->role_id );
+
+                //  creamos un usuario invitado
                 //  creamos un despachador
-                Dispatcher::create([
-                    'user_id'   =>  $user->id
-                ])->save();
+                // Dispatcher::create([
+                //     'user_id'   =>  $user->id
+                // ])->save();
 
                 //  ordenamos nuestro array de respuesta
                 $data = array (
                     'status'    =>  'success',
                     'code'      =>  200,
                     'message'   =>  'Usuario se ha creado correctamente',
-                    'user'      =>  $user
+                    'user'      =>  $user,
+                    'menu'      =>  $menu
                 );
             }
 
@@ -426,6 +436,8 @@ class UserController extends Controller
                     'user_id'   =>  $user_id
                 ])->save();
             case \App\Role::ADMIN:
+                break;
+            case \App\Role::GUEST:
                 break;
 
         }

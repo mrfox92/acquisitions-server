@@ -17,4 +17,9 @@ class Office extends Model
     {
         return $query->where($column, 'like', "%$value%");
     }
+
+    public function orders() {
+        return $this->belongsToMany(Order::class);
+    }
+    
 }

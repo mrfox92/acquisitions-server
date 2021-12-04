@@ -74,6 +74,7 @@ class RouteServiceProvider extends ServiceProvider
     {
         Route::prefix('api')
             ->middleware('api')
+            ->middleware('throttle:1000,1')  //  cantidad de peticiones por segundo
             ->namespace($this->namespace)
             ->group(base_path('routes/api.php'));
     }
