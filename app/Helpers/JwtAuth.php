@@ -73,6 +73,7 @@ class JwtAuth {
                     $data = array(
                         'id'        =>  $decoded->sub,
                         'status'    =>  'success',
+                        'code'      =>  200,
                         'message'   =>  'Login correcto',
                         'user'      =>  $decoded,
                         'menu'      =>  $menu
@@ -83,6 +84,7 @@ class JwtAuth {
                     //  devolvemos el jwt
                     $data = array(
                         'status'    =>  'success',
+                        'code'      =>  200,
                         'id'        =>  $user->id,
                         'message'   =>  'Login correcto',
                         'user'      =>  $user,

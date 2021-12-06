@@ -190,7 +190,7 @@ class InvoiceController extends Controller
     public function search ( Request $request ) {
         $search = $request->input('search', null);
 
-        $invoices = Invoice::with(['provider'])->whereLike('invoice_number', $search)->paginate(10);
+        $invoices = Invoice::with(['provider', 'materialsInvoices.material'])->whereLike('invoice_number', $search)->paginate(10);
 
         if ( !empty( $invoices ) && $invoices->count() !== 0 ) {
             //  retornamos los datos

@@ -47,6 +47,7 @@ Route::get('/dispatcher/material/offices/{id}', 'DispatcherController@officesLis
 Route::get('/dispatcher/material/detail/{id}', 'DispatcherController@show');
 Route::get('/dispatcher/material/order/{id}', 'DispatcherController@order');
 Route::get('/dispatcher/material/search/{search}', 'DispatcherController@getSearchResults');
+Route::get('/dispatcher/user', 'DispatcherController@getDispatcher');
 Route::put('/dispatcher/material/order/{id}', 'DispatcherController@processingOrder');
 Route::delete('/dispatcher/material/delete/{id}', 'DispatcherController@deleteItem');
 Route::post('/dispatcher/order', 'DispatcherController@store');
@@ -101,3 +102,14 @@ Route::get('/order/search/order', 'OrderController@search');
 //  rutas material order
 Route::Resource('/materialorder', 'MaterialOrderController');
 Route::get('/materialorder/detail/{order}', 'MaterialOrderController@order');
+
+
+//  rutas administración
+Route::post('/administrador/offices', 'AdminController@getOffices');
+Route::post('/administrador/offices/year', 'AdminController@getOfficesByYear');
+Route::post('/administrador/offices/compare', 'AdminController@compareByYear');
+Route::get('/administrador/materials', 'AdminController@getMaterials');
+
+Route::post('/administrador/materials/invoices', 'AdminController@getInvoices');
+
+Route::get('/administrador/admin', 'AdminController@isAdmin')->middleware('api.auth');

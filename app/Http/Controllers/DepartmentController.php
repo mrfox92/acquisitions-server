@@ -17,7 +17,7 @@ class DepartmentController extends Controller
 
     public function index () {
 
-        $departments = Department::paginate(10);
+        $departments = Department::with(['offices'])->paginate(10);
 
         $data = array(
             'status'        =>  'success',

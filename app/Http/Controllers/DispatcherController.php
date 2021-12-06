@@ -159,6 +159,37 @@ class DispatcherController extends Controller
         return response()->json($data, $data['code']);
     }
 
+    public function getDispatcher( Request $request ) {
+
+        //  obtenemos el token
+        $token = $request->header('Authorization');
+
+        $jwtAuth = new JwtAuth();
+        $userDecoded = $jwtAuth->checkToken( $token, true );
+
+        $dispatcher = Dispatcher::where('user_id', $userDecoded->sub)->first();
+
+        if ( !empty( $dispatcher ) && isset( $dispatcher->id ) ) {
+
+            $data = array(
+                'status'        =>  'success',
+                'code'          =>  200,
+                'dispatcher'    =>  true
+            );
+
+        } else {
+
+            $data = array(
+                'status'        =>  'error',
+                'code'          =>  404,
+                'message'       =>  'usuario adquisiciones no encontrado',
+                'dispatcher'    =>  false
+            );
+        }
+
+        return response()->json($data, $data['code']);
+    }
+
     public function order ( $id ) {
 
         $orden = Order::with(['materialsOrders.material'])->where('id', $id)->first();

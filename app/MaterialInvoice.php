@@ -9,7 +9,7 @@ class MaterialInvoice extends Model
 {
     use SoftDeletes;
     // public $table = 'material_invoices';
-    protected $fillable = ['material_id', 'invoice_id', 'quantity', 'unity_cost', 'iva', 'total_cost'];
+    protected $fillable = ['material_id', 'invoice_id', 'quantity', 'unity_cost', 'iva', 'total_cost', 'created_at'];
 
     public function acquisition () {
         return $this->belongsTo(Acquisition::class);

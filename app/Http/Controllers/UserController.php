@@ -269,7 +269,7 @@ class UserController extends Controller
 
         //  retornamos nuestra respuesta en formato json
 
-        return response()->json($signup, 200);
+        return response()->json($signup, $signup['code']);
     }
 
 
@@ -585,10 +585,10 @@ class UserController extends Controller
 
                 if ( $user_deleted ) {
 
-                    if ( !is_null( $avatar_user ) ) {
-                        //  eliminar imagen actual del directorio de imagenes users
-                        \Storage::delete('users/'.$avatar_user);
-                    }
+                    // if ( !is_null( $avatar_user ) ) {
+                    //     //  eliminar imagen actual del directorio de imagenes users
+                    //     \Storage::delete('users/'.$avatar_user);
+                    // }
                 }
 
                 $data = array(

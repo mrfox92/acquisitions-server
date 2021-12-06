@@ -24,9 +24,13 @@ class MenuFrontend {
 
         switch ( $role ) {
             case Role::ADMIN:
+                
                 array_push( $menu[0]['submenu'], [ 'titulo'   => 'Usuarios', 'url' => '/usuarios' ]);
-                array_push( $menu[0]['submenu'], [ 'titulo'    => 'Adquisiciones', 'url'   => '/adquisiciones' ]);
-                array_push( $menu[0]['submenu'], [ 'titulo'    => 'Despachadores', 'url'   => '/despachadores' ] );
+                array_push( $menu[0]['submenu'], [ 'titulo'   => 'Graficos', 'url' => '/graficas' ]);
+                array_push( $menu[0]['submenu'], [ 'titulo'   => 'Proveedores', 'url'  => '/proveedores' ] );
+                array_push( $menu[0]['submenu'], [ 'titulo'   => 'Facturas', 'url' => '/facturas' ] );
+                // array_push( $menu[0]['submenu'], [ 'titulo'    => 'Adquisiciones', 'url'   => '/adquisiciones' ]);
+                // array_push( $menu[0]['submenu'], [ 'titulo'    => 'Despachadores', 'url'   => '/despachadores' ] );
                 array_push( $menu[0]['submenu'], [ 'titulo'    => 'Departamentos', 'url'   => '/departamentos' ] );
                 array_push( $menu[0]['submenu'], [ 'titulo'    => 'Oficinas', 'url'        => '/oficinas' ] );
                 

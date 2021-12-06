@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Order extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['dispatcher_id', 'status', 'name_responsible'];
+    protected $fillable = ['dispatcher_id', 'status', 'name_responsible', 'created_at'];
     
     const ENABLED = 1;
     const PROCESING = 2;

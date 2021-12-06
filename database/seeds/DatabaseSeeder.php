@@ -27,8 +27,8 @@ class DatabaseSeeder extends Seeder
         $this->call( OfficeSeeder::class );
         $this->call( ProviderSeeder::class );
         $this->call( MaterialSeeder::class );
-        // $this->call( MaterialInvoiceSeeder::class );
-        // $this->call( MaterialOrderSeeder::class );
+        $this->call( MaterialInvoiceSeeder::class );
+        $this->call( MaterialOrderSeeder::class );
         
     }
 }

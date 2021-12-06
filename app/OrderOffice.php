@@ -10,7 +10,7 @@ class OrderOffice extends Model
     use SoftDeletes;
     
     protected $table = 'order_office';
-    protected $fillable = ['order_id', 'office_id'];
+    protected $fillable = ['order_id', 'office_id', 'created_at'];
 
     //  relacion 1 a muchos inversa
     public function order () {

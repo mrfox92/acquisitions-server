@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class MaterialOrder extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['material_id', 'order_id', 'quantity'];
+    protected $fillable = ['material_id', 'order_id', 'quantity', 'created_at'];
     
     public function material () {
         return $this->belongsTo(Material::class);

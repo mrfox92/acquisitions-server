@@ -7,7 +7,7 @@ use Faker\Generator as Faker;
 
 $factory->define(Order::class, function (Faker $faker) {
 
-    $name = $faker->sentence;
+    $name = $faker->name;
 
     $status = $faker->randomElement([
         \App\Order::ENABLED,

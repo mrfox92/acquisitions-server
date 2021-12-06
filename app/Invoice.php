@@ -10,7 +10,7 @@ class Invoice extends Model
 
     use SoftDeletes;
 
-    protected $fillable = ['invoice_number', 'acquisition_id', 'provider_id', 'emission_date', 'expiration_date'];
+    protected $fillable = ['acquisition_id', 'provider_id', 'emission_date', 'expiration_date', 'created_at'];
     
     public function acquisition () {
         return $this->belongsTo(Acquisition::class);
